@@ -1,0 +1,30 @@
+# --- Python Basics ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- Virtual Environments ---
+# This covers your new .venv and other common names
+.venv/
+venv/
+env/
+ENV/
+
+# --- Environment Variables (CRITICAL) ---
+# Never commit your API keys or database passwords
+.env
+.env.local
+
+# --- IDE Settings ---
+# Ignore VS Code and PyCharm local settings
+.vscode/
+.idea/
+
+# --- Database ---
+# If you are using SQLite locally, don't commit the DB file
+*.sqlite3
+*.db
+
+# --- OS Files ---
+.DS_Store
+Thumbs.db
