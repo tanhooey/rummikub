@@ -1,36 +1,28 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import LobbyComponent from './components/lobby'
+// import NameComponent from './components/NameComponent'
+// import { createBrowserRouter } from "react-router";
+// import { RouterProvider } from "react-router/dom";
 import './App.css'
+import PreLobbyComponent from './components/PreLobbyComponent'
+
 
 function App() {
-  const [count, setCount] = useState(0)
+  type PRELOBBY_STATES = "default" | "join_game" | "create_game"
+  const [prelobby_state, set_prelobby_state] = useState<PRELOBBY_STATES>("default")
+  const [uiState, changeUIState] = useState("find_lobby")
 
   return (
+    // This is a react fragment. React components can only return one parent element, 
+    // so this is a way to do so without introducing unnecessary divs
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
+      <h1>MathBlitz</h1>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
       </div>
-      <LobbyComponent></LobbyComponent>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <PreLobbyComponent />
     </>
+    // User should be shown FindLobby Component when the state of inLobby is true.
+    // Once the user has either joined a lobby or created a game, then the url should change to mathblitz.com/{gamelobby}
+    // when the url is mathblitz.com/{gamelobby}, we should unmount the FindLobby Component and Mount the Game Lobby Component
   )
 }
 
