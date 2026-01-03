@@ -1,4 +1,3 @@
-import { useState } from 'react'
 // import NameComponent from './components/NameComponent'
 // import { createBrowserRouter } from "react-router";
 // import { RouterProvider } from "react-router/dom";
@@ -6,11 +5,7 @@ import './App.css'
 import PreLobbyComponent from './components/PreLobbyComponent'
 
 
-function App() {
-  type PRELOBBY_STATES = "default" | "join_game" | "create_game"
-  const [prelobby_state, set_prelobby_state] = useState<PRELOBBY_STATES>("default")
-  const [uiState, changeUIState] = useState("find_lobby")
-
+function PreLobby() {
   return (
     // This is a react fragment. React components can only return one parent element, 
     // so this is a way to do so without introducing unnecessary divs
@@ -26,4 +21,4 @@ function App() {
   )
 }
 
-export default App
+export default PreLobby

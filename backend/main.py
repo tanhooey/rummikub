@@ -5,175 +5,31 @@ from util import Lobby, Session
 from util import get_random_string
 from util import CreateGame, ResponseEnvelope, ConnectionManager
 from typing import Dict
+from fastapi.middleware.cors import CORSMiddleware
+
+origins = [
+    "http://localhost:5173",  # Removed trailing slash
+]
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 cm = ConnectionManager()
 
 lobbies: Dict[str, Lobby] = {}
 sessions: Dict[str, Session] = {}
 
-html = """
-<!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="utf-8" />
-        <title>Rummikub — Lobby</title>
-        <style>
-            body { font-family: Arial, sans-serif; max-width: 800px; margin: 2rem auto; }
-            label { display: inline-block; width: 110px; }
-            #messages { margin-top: 1rem; list-style: none; padding: 0; }
-            #messages li { padding: 6px 8px; border-bottom: 1px solid #eee; }
-            #current_game { margin-top: 0.5rem; font-weight: bold; }
-        </style>
-    </head>
-    <body>
-        <h1>Rummikub — Lobby UI</h1>
 
-        <div id="session_info">Starting session...</div>
-
-        <div id="lobby_ui" style="display:none; margin-top:1rem;">
-            <div>
-                <label for="player_name">Your name</label>
-                <input id="player_name" placeholder="Enter your name" />
-            </div>
-            <div style="margin-top:8px;">
-                <button id="create_btn">Create Game</button>
-            </div>
-            <div style="margin-top:10px;">
-                <label for="join_game_id">Join Game ID</label>
-                <input id="join_game_id" placeholder="Game id" />
-                <button id="join_btn">Join Game</button>
-            </div>
-            <div id="current_game"></div>
-            <div id="lobby_messages"></div>
-        </div>
-
-        <form id="chat_form" onsubmit="sendMessage(event)" style="margin-top:1rem; display:none;">
-            <input type="text" id="messageText" autocomplete="off" placeholder="Type message or game action" />
-            <button>Send</button>
-        </form>
-
-        <ul id="messages"></ul>
-
-        <script>
-            let ws = null;
-            let currentGame = null;
-
-            function appendMsg(text) {
-                const messages = document.getElementById('messages');
-                const li = document.createElement('li');
-                li.textContent = text;
-                messages.appendChild(li);
-                window.scrollTo(0, document.body.scrollHeight);
-            }
-
-            function startSession() {
-                // Request a session cookie from backend; include credentials so cookie is set
-                fetch('/api/start_session', { credentials: 'include' })
-                    .then(res => res.json())
-                    .then(data => {
-                        document.getElementById('session_info').innerText = data.msg;
-                        document.getElementById('lobby_ui').style.display = 'block';
-                        connectWS();
-                    })
-                    .catch(err => {
-                        document.getElementById('session_info').innerText = 'Failed to start session.';
-                        console.error(err);
-                    });
-            }
-
-            function connectWS() {
-                const protocol = location.protocol === 'https:' ? 'wss://' : 'ws://';
-                ws = new WebSocket(protocol + window.location.host + '/ws');
-
-                ws.onopen = () => {
-                    appendMsg('Connected to websocket');
-                    document.getElementById('chat_form').style.display = 'block';
-                };
-
-                ws.onmessage = function(event) {
-                    appendMsg(event.data);
-                };
-
-                ws.onclose = function() {
-                    appendMsg('WebSocket closed');
-                    document.getElementById('chat_form').style.display = 'none';
-                };
-
-                ws.onerror = function(e) { console.error('WS error', e); };
-            }
-
-            function createGame() {
-                const name = document.getElementById('player_name').value || 'Host';
-                fetch('/api/create_game', {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ player_name: name })
-                })
-                .then(r => r.json())
-                .then(data => {
-                    // ResponseEnvelope returns message property
-                    const msg = data.message || data.msg || JSON.stringify(data);
-                    document.getElementById('current_game').innerText = msg;
-                    // Try to extract uuid from message if present
-                    const m = msg.match(/Game\s+(\w+)\s+successfully/);
-                    if (m) currentGame = m[1];
-                })
-                .catch(err => {
-                    console.error(err);
-                    appendMsg('Failed to create game');
-                });
-            }
-
-            function joinGame() {
-                const name = document.getElementById('player_name').value || 'Player';
-                const id = document.getElementById('join_game_id').value;
-                if (!id) { appendMsg('Enter a game id to join'); return; }
-                fetch('/api/join_game', {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ player_name: name, game_id: id })
-                })
-                .then(r => r.json())
-                .then(data => {
-                    const msg = data.message || JSON.stringify(data);
-                    document.getElementById('current_game').innerText = msg;
-                    if (data.status === 'true') currentGame = id;
-                })
-                .catch(err => {
-                    console.error(err);
-                    appendMsg('Failed to join game');
-                });
-            }
-
-            function sendMessage(event) {
-                event.preventDefault();
-                const input = document.getElementById('messageText');
-                const text = input.value;
-                if (!text) return;
-                if (!ws || ws.readyState !== WebSocket.OPEN) {
-                    appendMsg('WebSocket is not connected');
-                    return;
-                }
-                ws.send(text);
-                input.value = '';
-            }
-
-            document.addEventListener('DOMContentLoaded', function() {
-                document.getElementById('create_btn').addEventListener('click', createGame);
-                document.getElementById('join_btn').addEventListener('click', joinGame);
-                startSession();
-            });
-        </script>
-    </body>
-</html>
-"""
-
-@app.get("/")
-def get():
-    return HTMLResponse(html)
+# @app.get("/")
+# def get():
+#     return HTMLResponse(html)
 
 @app.get("/api/start_session")
 def start_session(response: Response, session_id: Annotated[str | None, Cookie()] = None):
@@ -188,7 +44,7 @@ def start_session(response: Response, session_id: Annotated[str | None, Cookie()
         # SECURITY CRITICAL SETTINGS:
         httponly=True,  # Prevents JavaScript from reading this (stops XSS)
         secure=False,    # Only sends cookie over HTTPS
-        samesite="lax", # Protects against CSRF attacks
+        samesite="none", # Protects against CSRF attacks
         max_age=3600    # Cookie expires in 1 hour (persistence)
     )
 
